@@ -176,14 +176,17 @@ func (t *SimpleChaincode) set_user(stub shim.ChaincodeStubInterface, args []stri
 		return nil, errors.New("Incorrect number of arguments. Expecting 2")
 	}
 
-	accountBalance, err := strconv.Atoi(stub.GetState(args[0]))
+	accountBalance, err := stub.GetState(args[0])
 	if err != nil {
 		return nil, errors.New("Failed to get thing 1")
 	}
-  toAccountBalance, err := strconv.Atoi(stub.GetState(args[2]))
+  accountBalance = strconv.Atoi(accountBalance)
+
+  toAccountBalance, err := stub.GetState(args[2])
 	if err != nil {
 		return nil, errors.New("Failed to get thing 2")
 	}
+  toAccountBalance = strconv.Atoi(toAccountBalance)
 
   transferAmount, err := strconv.Atoi(args[1])
    if err != nil {
