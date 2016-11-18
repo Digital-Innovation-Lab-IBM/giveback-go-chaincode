@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strconv"
 	"encoding/json"
-	"strings"
 
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 )
@@ -149,64 +148,79 @@ func (t *SimpleChaincode) Write(stub shim.ChaincodeStubInterface, args []string)
 }
 
 func (t *SimpleChaincode) CreateAccount(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
-  var name, value string // Entities
-	var err error
-	fmt.Println("running write()")
+  // Obtain the username to associate with the account
+  var username string
+  var err error
+ 	fmt.Println("running write()")
 
-	if len(args) != 2 {
-		return nil, errors.New("Incorrect number of arguments. Expecting 2. name of the variable and value to set")
-	}
+  if len(args) != 1 {
+     fmt.Println("Error obtaining username")
+     return nil, errors.New("createAccount accepts a single username argument")
+  }
+  username = args[0]
 
-	name = args[0]															//rename for funsies
-	value = args[1]
-	err = stub.PutState(name, []byte(value))								//write the variable into the chaincode state
-	if err != nil {
-		return nil, err
-	}
-	return nil, nil
+  //var account = Account{ID: username, CashBalance: 500}
+  //accountBytes, err := json.Marshal(&account)
+
+  err = stub.PutState(username, []byte(username))
+  if err != nil {
+     return nil, err
+  }
+  return nil, nil
 }
 // ============================================================================================================================
 // Set Trade - create an open trade for a marble you want with marbles you have
 // ============================================================================================================================
 func (t *SimpleChaincode) set_user(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 	var err error
+  var toRes Account
 	//     0         1        2
 	// "fromUser", "500", "toUser",
 	if len(args) < 2 {
 		return nil, errors.New("Incorrect number of arguments. Expecting 2")
 	}
 
-	accountBalance, err := stub.GetState(args[0])
+	fromAccountAsBytes, err := stub.GetState(args[0])
 	if err != nil {
-		return nil, errors.New("Failed to get thing 1")
+		return nil, errors.New("Failed to get thing")
 	}
-  accountBalance = strconv.Atoi(accountBalance)
+  toAccountAsBytes, err := stub.GetState(args[2])
+	if err != nil {
+		return nil, errors.New("Failed to get thing")
+	}
 
-  toAccountBalance, err := stub.GetState(args[2])
-	if err != nil {
-		return nil, errors.New("Failed to get thing 2")
-	}
-  toAccountBalance = strconv.Atoi(toAccountBalance)
+
+	fromRes := Account{}
+	json.Unmarshal(fromAccountAsBytes, &fromRes)										//un stringify it aka JSON.parse()
+
+  toRes = Account{}
+	json.Unmarshal(toAccountAsBytes, &toRes)
+
+
+
+	accountBalance := fromRes.CashBalance
+
 
   transferAmount, err := strconv.Atoi(args[1])
    if err != nil {
       // handle error
    }
-
   if(accountBalance < transferAmount) {
     fmt.Println("- Insufficient funds")
     return nil, nil
   }
 
-  toAccountBalance = toAccountBalance + transferAmount
-  accountBalance = accountBalance - transferAmount
+  toRes.CashBalance = accountBalance + transferAmount
+  fromRes.CashBalance = fromRes.CashBalance - transferAmount
 
-	err = stub.PutState(args[0], []byte(strconv.Itoa(accountBalance)))								//rewrite the marble with id as key
+	toJsonAsBytes, _ := json.Marshal(toRes)
+	err = stub.PutState(args[2], toJsonAsBytes)								//rewrite the marble with id as key
 	if err != nil {
 		return nil, err
 	}
 
-	err = stub.PutState(args[2], []byte(strconv.Itoa(toAccountBalance)))								//rewrite the marble with id as key
+  fromJsonAsBytes, _ := json.Marshal(fromRes)
+	err = stub.PutState(args[0], fromJsonAsBytes)								//rewrite the marble with id as key
 	if err != nil {
 		return nil, err
 	}
