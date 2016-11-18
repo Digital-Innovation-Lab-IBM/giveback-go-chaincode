@@ -195,7 +195,7 @@ func (t *SimpleChaincode) set_user(stub shim.ChaincodeStubInterface, args []stri
     return nil, nil
   }
 
-  toaccountBalance = toAccountBalance + transferAmount
+  toAccountBalance = toAccountBalance + transferAmount
   accountBalance = accountBalance - transferAmount
 
 	err = stub.PutState(args[0], []byte(strconv.Itoa(accountBalance)))								//rewrite the marble with id as key
