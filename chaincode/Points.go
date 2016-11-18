@@ -210,7 +210,7 @@ func (t *SimpleChaincode) set_user(stub shim.ChaincodeStubInterface, args []stri
     return nil, nil
   }
 
-  toRes.CashBalance = toRes.cashBalance + transferAmount
+  toRes.CashBalance = toRes.CashBalance + transferAmount
   fromRes.CashBalance = fromRes.CashBalance - transferAmount
 
 	toJsonAsBytes, _ := json.Marshal(toRes)
