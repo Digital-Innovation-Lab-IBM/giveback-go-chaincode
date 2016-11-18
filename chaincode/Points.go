@@ -209,5 +209,5 @@ func (t *SimpleChaincode) set_user(stub shim.ChaincodeStubInterface, args []stri
 	}
 
 	fmt.Println("- end set trade")
-	return []byte(accountBalance), nil
+	return nil, nil
 }
