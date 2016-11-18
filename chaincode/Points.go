@@ -159,10 +159,10 @@ func (t *SimpleChaincode) CreateAccount(stub shim.ChaincodeStubInterface, args [
   }
   username = args[0]
 
-  //var account = Account{ID: username, CashBalance: 500}
-  //accountBytes, err := json.Marshal(&account)
+  var account = Account{ID: username, CashBalance: 500}
+  accountBytes, err := json.Marshal(&account)
 
-  err = stub.PutState(username, []byte(username))
+  err = stub.PutState(username, accountBytes)
   if err != nil {
      return nil, err
   }
