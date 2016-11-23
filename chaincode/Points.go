@@ -7,8 +7,8 @@ import (
   	"time"
 	"encoding/json"
 
+	"github.com/nu7hatch/gouuid"
 	"github.com/hyperledger/fabric/core/chaincode/shim"
- 	"github.com/satori/go.uuid"
 )
 
 type SimpleChaincode struct {
