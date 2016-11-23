@@ -219,7 +219,7 @@ func (t *SimpleChaincode) set_user(stub shim.ChaincodeStubInterface, args []stri
 
   // Generate psuedo UUID
   b := make([]byte, 16)
-  _, err := rand.Read(b)
+  _, err = rand.Read(b)
   if err != nil {
       fmt.Println("Error: ", err)
       return
