@@ -6,8 +6,8 @@ import (
 	"strconv"
   	"time"
 	"encoding/json"
-
-	"github.com/nu7hatch/gouuid"
+  	"./imports"
+	
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 )
 
@@ -216,10 +216,9 @@ func (t *SimpleChaincode) set_user(stub shim.ChaincodeStubInterface, args []stri
   toRes.CashBalance = toRes.CashBalance + transferAmount
   fromRes.CashBalance = fromRes.CashBalance - transferAmount
 
-  transID, err := uuid.NewV4()
-  transIDStr := transID.String()
+transID := uuid.NewV4().String()
   timestamp := time.Now().Format(time.RFC3339)
-	trans := Transaction{ID: transIDStr, Timestamp: timestamp, FromUser: fromRes.ID, ToUser: toRes.ID, Quantity: transferAmount}
+  trans := Transaction{ID: transID, Timestamp: timestamp, FromUser: fromRes.ID, ToUser: toRes.ID, Quantity: transferAmount}
   transBytes, err := json.Marshal(&trans)
 
   err = stub.PutState(transIDStr, transBytes)
