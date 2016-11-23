@@ -1,32 +1,32 @@
 package main
 
 import (
-  	"errors"
+  "errors"
 	"fmt"
+  "time"
 	"strconv"
-  	"time"
 	"encoding/json"
-  	"./imports"
-	
+
 	"github.com/hyperledger/fabric/core/chaincode/shim"
+  "github.com/satori/go.uuid"
 )
 
 type SimpleChaincode struct {
 }
 
-type Account struct {
-	ID          string  `json:"ID"`
-	CashBalance int     `json:"CashBalance"`
-}
-
 type Transaction struct {
 	ID          string   `json:"ID"`
- 	Timestamp   string   `json:"timestamp"`
+  Timestamp   string   `json:"timestamp"`
 	FromUser    string   `json:"fromUser"`
 	ToUser      string   `json:"toUser"`
 	Quantity    int      `json:"quantity"`
 }
 
+type Account struct {
+	ID                 string          `json:"ID"`
+	CashBalance        int             `json:"CashBalance"`
+  TransactionHistroy []Transaction   `json:"TransactionHistroy"`
+}
 
 // ============================================================================================================================
 // Init - reset all the things
@@ -216,22 +216,24 @@ func (t *SimpleChaincode) set_user(stub shim.ChaincodeStubInterface, args []stri
   toRes.CashBalance = toRes.CashBalance + transferAmount
   fromRes.CashBalance = fromRes.CashBalance - transferAmount
 
-transID := uuid.NewV4().String()
+  transID := uuid.NewV4().String()
   timestamp := time.Now().Format(time.RFC3339)
   trans := Transaction{ID: transID, Timestamp: timestamp, FromUser: fromRes.ID, ToUser: toRes.ID, Quantity: transferAmount}
   transBytes, err := json.Marshal(&trans)
 
-  err = stub.PutState(transIDStr, transBytes)
+  err = stub.PutState(transID, transBytes)
   if err != nil {
      return nil, err
   }
-	
+
+  toRes.TransactionHistroy = append(toRes.TransactionHistroy, trans)
 	toJsonAsBytes, _ := json.Marshal(toRes)
 	err = stub.PutState(args[2], toJsonAsBytes)								//rewrite the marble with id as key
 	if err != nil {
 		return nil, err
 	}
 
+  fromRes.TransactionHistroy = append(fromRes.TransactionHistroy, trans)
   fromJsonAsBytes, _ := json.Marshal(fromRes)
 	err = stub.PutState(args[0], fromJsonAsBytes)								//rewrite the marble with id as key
 	if err != nil {
