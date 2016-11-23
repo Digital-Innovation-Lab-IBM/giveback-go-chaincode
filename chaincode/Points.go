@@ -20,7 +20,8 @@ type Account struct {
 }
 
 type Transaction struct {
-	CUSIP       string   `json:"cusip"`
+	ID          string   `json:"ID"`
+ 	Timestamp   string   `json:"timestamp"`
 	FromUser    string   `json:"fromUser"`
 	ToUser      string   `json:"toUser"`
 	Quantity    int      `json:"quantity"`
