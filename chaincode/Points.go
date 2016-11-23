@@ -222,7 +222,7 @@ func (t *SimpleChaincode) set_user(stub shim.ChaincodeStubInterface, args []stri
 	trans := Transaction{ID: transIDStr, Timestamp: timestamp, FromUser: fromRes.ID, ToUser: toRes.ID, Quantity: transferAmount}
   transBytes, err := json.Marshal(&trans)
 
-  err = stub.PutState(transID, transBytes)
+  err = stub.PutState(transIDStr, transBytes)
   if err != nil {
      return nil, err
   }
