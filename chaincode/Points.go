@@ -215,6 +215,9 @@ func (t *SimpleChaincode) set_user(stub shim.ChaincodeStubInterface, args []stri
   toRes.CashBalance = toRes.CashBalance + transferAmount
   fromRes.CashBalance = fromRes.CashBalance - transferAmount
 
+	transID := uuid.NewV4().String()
+  timestamp := time.Now().Format(time.RFC3339)
+	
 	toJsonAsBytes, _ := json.Marshal(toRes)
 	err = stub.PutState(args[2], toJsonAsBytes)								//rewrite the marble with id as key
 	if err != nil {
