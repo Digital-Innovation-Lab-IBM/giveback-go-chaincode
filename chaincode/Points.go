@@ -1,12 +1,14 @@
 package main
 
 import (
-  "errors"
+  	"errors"
 	"fmt"
 	"strconv"
+  	"time"
 	"encoding/json"
 
 	"github.com/hyperledger/fabric/core/chaincode/shim"
+	"github.com/satori/go.uuid"
 )
 
 type SimpleChaincode struct {
