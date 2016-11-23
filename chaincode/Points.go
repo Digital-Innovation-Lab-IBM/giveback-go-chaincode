@@ -6,9 +6,9 @@ import (
   "time"
 	"strconv"
 	"encoding/json"
+  "crypto/rand"
 
 	"github.com/hyperledger/fabric/core/chaincode/shim"
-  "github.com/twinj/uuid"
 )
 
 type SimpleChaincode struct {
@@ -53,7 +53,6 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface, function string
 	// if err != nil {
 	// 	return nil, err
 	// }
-	uuid.Init()
 
 	return nil, nil
 }
@@ -217,7 +216,17 @@ func (t *SimpleChaincode) set_user(stub shim.ChaincodeStubInterface, args []stri
   toRes.CashBalance = toRes.CashBalance + transferAmount
   fromRes.CashBalance = fromRes.CashBalance - transferAmount
 
-  transID := uuid.NewV4().String()
+
+  // Generate psuedo UUID
+  b := make([]byte, 16)
+  _, err := rand.Read(b)
+  if err != nil {
+      fmt.Println("Error: ", err)
+      return
+  }
+
+  transID := fmt.Sprintf("%X-%X-%X-%X-%X", b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
+
   timestamp := time.Now().Format(time.RFC3339)
   trans := Transaction{ID: transID, Timestamp: timestamp, FromUser: fromRes.ID, ToUser: toRes.ID, Quantity: transferAmount}
   transBytes, err := json.Marshal(&trans)
