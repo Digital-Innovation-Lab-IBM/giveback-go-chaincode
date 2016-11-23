@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 
 	"github.com/hyperledger/fabric/core/chaincode/shim"
-  "github.com/satori/go.uuid"
+  "github.com/twinj/uuid"
 )
 
 type SimpleChaincode struct {
@@ -53,6 +53,7 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface, function string
 	// if err != nil {
 	// 	return nil, err
 	// }
+	uuid.Init()
 
 	return nil, nil
 }
