@@ -216,9 +216,9 @@ func (t *SimpleChaincode) set_user(stub shim.ChaincodeStubInterface, args []stri
   toRes.CashBalance = toRes.CashBalance + transferAmount
   fromRes.CashBalance = fromRes.CashBalance - transferAmount
 
-  transID, err := uuid.NewV4().String()
+  transID, err := uuid.NewV4()
   timestamp := time.Now().Format(time.RFC3339)
-  trans := Transaction{ID: transID, Timestamp: timestamp, FromUser: fromRes.ID, ToUser: toRes.ID, Quantity: transferAmount}
+	trans := Transaction{ID: transID.String(), Timestamp: timestamp, FromUser: fromRes.ID, ToUser: toRes.ID, Quantity: transferAmount}
   transBytes, err := json.Marshal(&trans)
 
   err = stub.PutState(transID, transBytes)
