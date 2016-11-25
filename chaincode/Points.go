@@ -3,10 +3,8 @@ package main
 import (
   "errors"
 	"fmt"
-  "time"
 	"strconv"
 	"encoding/json"
-  "crypto/rand"
 
 	"github.com/hyperledger/fabric/core/chaincode/shim"
   "golang.org/x/crypto/bcrypt"
@@ -164,8 +162,9 @@ func (t *SimpleChaincode) CreateAccount(stub shim.ChaincodeStubInterface, args [
   if err != nil { //nil means matched
      return nil, err
   }
+  hashedStr := string(hashedPassword)
 
-  var account = Account{ID: username, Password: hashedPassword, CashBalance: 500}
+  var account = Account{ID: username, Password: hashedStr, CashBalance: 500}
   accountBytes, err := json.Marshal(&account)
 
   err = stub.PutState(username, accountBytes)
