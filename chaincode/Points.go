@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 
 	"github.com/hyperledger/fabric/core/chaincode/shim"
-  "golang.org/x/crypto/bcrypt"
+  "crypto/sha256"
 )
 
 type SimpleChaincode struct {
@@ -154,17 +154,11 @@ func (t *SimpleChaincode) CreateAccount(stub shim.ChaincodeStubInterface, args [
   username = args[0]
   password := []byte(args[1])
 
-  hashedPassword, err := bcrypt.GenerateFromPassword(password, bcrypt.DefaultCost)
-  if err != nil {
-    return nil, err
-  }
-  err = bcrypt.CompareHashAndPassword(hashedPassword, password)
-  if err != nil { //nil means matched
-     return nil, err
-  }
-  hashedStr := string(hashedPassword)
+  hasher := sha256.New()
+  hasher.Write(password)
+  hashStr := string(hasher.Sum(nil))
 
-  var account = Account{ID: username, Password: hashedStr, CashBalance: 500}
+  var account = Account{ID: username, Password: hashStr, CashBalance: 500}
   accountBytes, err := json.Marshal(&account)
 
   err = stub.PutState(username, accountBytes)
