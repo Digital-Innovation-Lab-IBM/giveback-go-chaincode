@@ -9,23 +9,16 @@ import (
   "crypto/rand"
 
 	"github.com/hyperledger/fabric/core/chaincode/shim"
+  "golang.org/x/crypto/bcrypt"
 )
 
 type SimpleChaincode struct {
 }
 
-type Transaction struct {
-	ID          string   `json:"ID"`
-  Timestamp   string   `json:"timestamp"`
-	FromUser    string   `json:"fromUser"`
-	ToUser      string   `json:"toUser"`
-	Quantity    int      `json:"quantity"`
-}
-
 type Account struct {
 	ID                 string          `json:"ID"`
+	Password           string          `json:"Password"`
 	CashBalance        int             `json:"CashBalance"`
-  TransactionHistroy []Transaction   `json:"TransactionHistroy"`
 }
 
 // ============================================================================================================================
@@ -156,13 +149,23 @@ func (t *SimpleChaincode) CreateAccount(stub shim.ChaincodeStubInterface, args [
   var err error
  	fmt.Println("running write()")
 
-  if len(args) != 1 {
+  if len(args) != 2 {
      fmt.Println("Error obtaining username")
      return nil, errors.New("createAccount accepts a single username argument")
   }
   username = args[0]
+  password := []byte(args[1])
 
-  var account = Account{ID: username, CashBalance: 500}
+  hashedPassword, err := bcrypt.GenerateFromPassword(password, bcrypt.DefaultCost)
+  if err != nil {
+    return nil, err
+  }
+  err = bcrypt.CompareHashAndPassword(hashedPassword, password)
+  if err != nil { //nil means matched
+     return nil, err
+  }
+
+  var account = Account{ID: username, Password: hashedPassword, CashBalance: 500}
   accountBytes, err := json.Marshal(&account)
 
   err = stub.PutState(username, accountBytes)
@@ -216,33 +219,12 @@ func (t *SimpleChaincode) set_user(stub shim.ChaincodeStubInterface, args []stri
   toRes.CashBalance = toRes.CashBalance + transferAmount
   fromRes.CashBalance = fromRes.CashBalance - transferAmount
 
-
-  // Generate psuedo UUID
-  b := make([]byte, 16)
-  _, err = rand.Read(b)
-  if err != nil {
-	fmt.Println("Error: ", err)
-  }
-
-  transID := fmt.Sprintf("%X-%X-%X-%X-%X", b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
-
-  timestamp := time.Now().Format(time.RFC3339)
-  trans := Transaction{ID: transID, Timestamp: timestamp, FromUser: fromRes.ID, ToUser: toRes.ID, Quantity: transferAmount}
-  transBytes, err := json.Marshal(&trans)
-
-  err = stub.PutState(transID, transBytes)
-  if err != nil {
-     return nil, err
-  }
-
-  toRes.TransactionHistroy = append(toRes.TransactionHistroy, trans)
 	toJsonAsBytes, _ := json.Marshal(toRes)
 	err = stub.PutState(args[2], toJsonAsBytes)								//rewrite the marble with id as key
 	if err != nil {
 		return nil, err
 	}
 
-  fromRes.TransactionHistroy = append(fromRes.TransactionHistroy, trans)
   fromJsonAsBytes, _ := json.Marshal(fromRes)
 	err = stub.PutState(args[0], fromJsonAsBytes)								//rewrite the marble with id as key
 	if err != nil {
