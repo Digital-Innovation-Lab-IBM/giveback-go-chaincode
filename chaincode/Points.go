@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 
 	"github.com/hyperledger/fabric/core/chaincode/shim"
-  "crypto/sha256"
 )
 
 type SimpleChaincode struct {
@@ -152,13 +151,9 @@ func (t *SimpleChaincode) CreateAccount(stub shim.ChaincodeStubInterface, args [
      return nil, errors.New("createAccount accepts a single username argument")
   }
   username = args[0]
-  password := []byte(args[1])
+  password := args[1]
 
-  hasher := sha256.New()
-  hasher.Write(password)
-  hashStr := string(hasher.Sum(nil))
-
-  var account = Account{ID: username, Password: hashStr, CashBalance: 500}
+  var account = Account{ID: username, Password: password, CashBalance: 500}
   accountBytes, err := json.Marshal(&account)
 
   err = stub.PutState(username, accountBytes)
