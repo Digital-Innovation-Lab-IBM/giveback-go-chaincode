@@ -219,9 +219,13 @@ func (t *SimpleChaincode) PurchaseProduct(stub shim.ChaincodeStubInterface, args
   prodRes := Product{}
 	json.Unmarshal(prodAsBytes, &prodRes)
 
+  if(prodRes.Owner != nil){
+    return errors.New("Already owned"), errors.New("Already owned")
+  }
+
   if(fromRes.PointsBalance < prodRes.Cost){
     fmt.Println("- Insufficient funds")
-    return nil, errors.New("Insufficient funds")
+    return errors.New("Insufficient funds"), errors.New("Insufficient funds")
   }
 
   prodRes.Owner = &fromRes.ID
