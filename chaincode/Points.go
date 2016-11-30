@@ -225,7 +225,7 @@ func (t *SimpleChaincode) PurchaseProduct(stub shim.ChaincodeStubInterface, args
 
   if(fromRes.PointsBalance < prodRes.Cost){
     fmt.Println("- Insufficient funds")
-    return []byte("Insufficient funds"), errors.New("Insufficient funds")
+    return nil, errors.New("Insufficient funds")
   }
 
   prodRes.Owner = &fromRes.ID
