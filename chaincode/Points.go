@@ -179,7 +179,7 @@ func (t *SimpleChaincode) CreateProduct(stub shim.ChaincodeStubInterface, args [
   name := args[1]
   cost, err := strconv.Atoi(args[2])
    if err != nil {
-      // handle error
+      return nil, err
    }
 
   prod := Product{ID: ID, Name: name, Cost: cost, Owner:nil}
@@ -190,7 +190,7 @@ func (t *SimpleChaincode) CreateProduct(stub shim.ChaincodeStubInterface, args [
      return nil, err
   }
 
-  return nil, nil
+  return nil, errors.New(ID)
 }
 
 func (t *SimpleChaincode) PurchaseProduct(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
