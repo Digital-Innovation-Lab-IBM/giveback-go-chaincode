@@ -172,7 +172,7 @@ func (t *SimpleChaincode) CreateProduct(stub shim.ChaincodeStubInterface, args [
   var err error
  	fmt.Println("running write()")
 
-  if len(args) != 2 {
+  if len(args) != 3 {
      return nil, errors.New("CreateProduct accepts a 3 argument")
   }
   ID := args[0]
@@ -190,7 +190,7 @@ func (t *SimpleChaincode) CreateProduct(stub shim.ChaincodeStubInterface, args [
      return nil, err
   }
 
-  return nil, errors.New(ID)
+  return nil, nil
 }
 
 func (t *SimpleChaincode) PurchaseProduct(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
