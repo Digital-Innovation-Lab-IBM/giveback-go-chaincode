@@ -15,7 +15,15 @@ type SimpleChaincode struct {
 type Account struct {
 	ID                 string          `json:"ID"`
 	Password           string          `json:"Password"`
-	CashBalance        int             `json:"CashBalance"`
+	GiveBalance        int             `json:"GiveBalance"`
+	PointsBalance      int             `json:"PointsBalance"`
+}
+
+type Product struct{
+  ID                 string          `json:"ID"`
+  Name               string          `json:"Name"`
+  Cost               int             `json:"Cost"`
+  Owner              *string         `json:"Owner"`
 }
 
 // ============================================================================================================================
@@ -36,13 +44,6 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface, function string
 	if err != nil {
 		return nil, err
 	}
-
-	// var empty []string
-	// jsonAsBytes, _ := json.Marshal(empty)								//marshal an emtpy array of strings to clear the index
-	// err = stub.PutState(marbleIndexStr, jsonAsBytes)
-	// if err != nil {
-	// 	return nil, err
-	// }
 
 	return nil, nil
 }
@@ -77,6 +78,10 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 		return t.Write(stub, args)
 	} else if function == "createAccount" {
     return t.CreateAccount(stub, args)
+  } else if function == "createProduct" {
+    return t.CreateProduct(stub, args)
+  } else if function == "purchaseProduct" {
+    return t.PurchaseProduct(stub, args)
   } else if function == "set_user" {										//change owner of a marble
 		res, err := t.set_user(stub, args)											//lets make sure all open trades are still valid
 		return res, err
@@ -153,7 +158,7 @@ func (t *SimpleChaincode) CreateAccount(stub shim.ChaincodeStubInterface, args [
   username = args[0]
   password := args[1]
 
-  var account = Account{ID: username, Password: password, CashBalance: 500}
+  var account = Account{ID: username, Password: password, GiveBalance: 500, PointsBalance:50}
   accountBytes, err := json.Marshal(&account)
 
   err = stub.PutState(username, accountBytes)
@@ -162,16 +167,92 @@ func (t *SimpleChaincode) CreateAccount(stub shim.ChaincodeStubInterface, args [
   }
   return nil, nil
 }
+
+func (t *SimpleChaincode) CreateProduct(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+  var err error
+ 	fmt.Println("running write()")
+
+  if len(args) != 2 {
+     return nil, errors.New("CreateProduct accepts a 3 argument")
+  }
+  ID := args[0]
+  name := args[1]
+  cost, err := strconv.Atoi(args[2])
+   if err != nil {
+      // handle error
+   }
+
+  prod := Product{ID: ID, Name: name, Cost: cost, Owner:nil}
+  prodBytes, err := json.Marshal(&prod)
+
+  err = stub.PutState(ID, prodBytes)
+  if err != nil {
+     return nil, err
+  }
+
+  return nil, nil
+}
+
+func (t *SimpleChaincode) PurchaseProduct(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+  var err error
+ 	fmt.Println("running write()")
+
+  if len(args) != 2 {
+     return nil, errors.New("createAccount 2 argument")
+  }
+  ProdID := args[0]
+  username := args[1]
+
+  fromAccountAsBytes, err := stub.GetState(username)
+	if err != nil {
+		return nil, errors.New("Failed to get thing")
+	}
+
+  prodAsBytes, err := stub.GetState(ProdID)
+	if err != nil {
+		return nil, errors.New("Failed to get thing")
+	}
+
+  fromRes := Account{}
+	json.Unmarshal(fromAccountAsBytes, &fromRes)										//un stringify it aka JSON.parse()
+
+  prodRes := Product{}
+	json.Unmarshal(prodAsBytes, &prodRes)
+
+  if(fromRes.PointsBalance < prodRes.Cost){
+    fmt.Println("- Insufficient funds")
+    return nil, errors.New("Insufficient funds")
+  }
+
+  prodRes.Owner = &fromRes.ID
+  fromRes.PointsBalance -= prodRes.Cost
+
+  fromJsonAsBytes, _ := json.Marshal(fromRes)
+	err = stub.PutState(username, fromJsonAsBytes)								//rewrite the marble with id as key
+	if err != nil {
+		return nil, err
+	}
+
+  toJsonAsBytes, _ := json.Marshal(prodRes)
+  err = stub.PutState(ProdID, toJsonAsBytes)								//rewrite the marble with id as key
+  if err != nil {
+    return nil, err
+  }
+
+	fmt.Println("- end set PurchaseProduct")
+	return nil, nil
+}
+
 // ============================================================================================================================
 // Set Trade - create an open trade for a marble you want with marbles you have
 // ============================================================================================================================
 func (t *SimpleChaincode) set_user(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 	var err error
   var toRes Account
-	//     0         1        2
-	// "fromUser", "500", "toUser",
-	if len(args) < 2 {
-		return nil, errors.New("Incorrect number of arguments. Expecting 2")
+	//     0         1        2        3
+	// "fromUser", "500", "toUser", "reason"
+	if len(args) < 3 {
+		return nil, errors.New("Incorrect number of arguments. Expecting 4")
 	}
 
 	fromAccountAsBytes, err := stub.GetState(args[0])
@@ -192,7 +273,7 @@ func (t *SimpleChaincode) set_user(stub shim.ChaincodeStubInterface, args []stri
 
 
 
-	accountBalance := fromRes.CashBalance
+	accountBalance := fromRes.GiveBalance
 
 
   transferAmount, err := strconv.Atoi(args[1])
@@ -204,8 +285,8 @@ func (t *SimpleChaincode) set_user(stub shim.ChaincodeStubInterface, args []stri
     return nil, nil
   }
 
-  toRes.CashBalance = toRes.CashBalance + transferAmount
-  fromRes.CashBalance = fromRes.CashBalance - transferAmount
+  toRes.PointsBalance = toRes.PointsBalance + transferAmount
+  fromRes.GiveBalance = fromRes.GiveBalance - transferAmount
 
 	toJsonAsBytes, _ := json.Marshal(toRes)
 	err = stub.PutState(args[2], toJsonAsBytes)								//rewrite the marble with id as key
