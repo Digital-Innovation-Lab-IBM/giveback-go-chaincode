@@ -80,6 +80,8 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
     return t.CreateAccount(stub, args)
   } else if function == "createProduct" {
     return t.CreateProduct(stub, args)
+  } else if function == "userAllowance" {
+    return t.UserAllowance(stub, args)
   } else if function == "purchaseProduct" {
     return t.PurchaseProduct(stub, args)
   } else if function == "set_user" {										//change owner of a marble
@@ -191,6 +193,39 @@ func (t *SimpleChaincode) CreateProduct(stub shim.ChaincodeStubInterface, args [
   }
 
   return nil, nil
+}
+
+func (t *SimpleChaincode) UserAllowance(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+	var err error
+  var toRes Account
+	//     0         1
+	// "User",     "500"
+	if len(args) < 2 {
+		return nil, errors.New("Incorrect number of arguments. Expecting 2")
+	}
+  username := args[0]
+
+  toAccountAsBytes, err := stub.GetState(username)
+	if err != nil {
+		return nil, errors.New("Failed to get thing")
+	}
+  toRes = Account{}
+	json.Unmarshal(toAccountAsBytes, &toRes)
+
+  transferAmount, err := strconv.Atoi(args[1])
+   if err != nil {
+ 		return nil, err
+   }
+
+  toRes.GiveBalance = toRes.GiveBalance + transferAmount
+
+	toJsonAsBytes, _ := json.Marshal(toRes)
+	err = stub.PutState(username, toJsonAsBytes)								//rewrite the marble with id as key
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, nil
 }
 
 func (t *SimpleChaincode) PurchaseProduct(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
