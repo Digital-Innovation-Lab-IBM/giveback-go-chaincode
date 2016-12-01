@@ -80,8 +80,8 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
     return t.CreateAccount(stub, args)
   } else if function == "createProduct" {
     return t.CreateProduct(stub, args)
-  } else if function == "userAllowance" {
-    return t.UserAllowance(stub, args)
+  } else if function == "userWallets" {
+    return t.UserWallets(stub, args)
   } else if function == "purchaseProduct" {
     return t.PurchaseProduct(stub, args)
   } else if function == "set_user" {										//change owner of a marble
@@ -195,7 +195,7 @@ func (t *SimpleChaincode) CreateProduct(stub shim.ChaincodeStubInterface, args [
   return nil, nil
 }
 
-func (t *SimpleChaincode) UserAllowance(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+func (t *SimpleChaincode) UserWallets(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 	return nil, nil
 }
 
