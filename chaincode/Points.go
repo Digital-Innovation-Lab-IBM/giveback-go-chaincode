@@ -74,8 +74,8 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 
   if function == "init" {													//initialize the chaincode state, used as reset
 		return t.Init(stub, "init", args)
-	}  else if function == "addAllowance" {											//writes a value to the chaincode state
-		return t.AddAllowance(stub, args)
+	}  else if function == "write" {											//writes a value to the chaincode state
+		return t.Write(stub, args)
 	} else if function == "createAccount" {
     return t.CreateAccount(stub, args)
   } else if function == "createProduct" {
@@ -127,21 +127,37 @@ func (t *SimpleChaincode) read(stub shim.ChaincodeStubInterface, args []string) 
 	return valAsbytes, nil													//send it onward
 }
 
-func (t *SimpleChaincode) AddAllowance(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
-	var name, value string // Entities
-	var err error
-	fmt.Println("running write()")
-
-	if len(args) != 2 {
-		return nil, errors.New("Incorrect number of arguments. Expecting 2. name of the variable and value to set")
+func (t *SimpleChaincode) Write(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+  var err error
+  var toRes Account
+	//     0         1
+	// "User",     "500"
+	if len(args) < 2 {
+		return nil, errors.New("Incorrect number of arguments. Expecting 2")
 	}
 
-	name = args[0]															//rename for funsies
-	value = args[1]
-	err = stub.PutState(name, []byte(value))								//write the variable into the chaincode state
+  username := args[0]
+
+  toAccountAsBytes, err := stub.GetState(username)
+	if err != nil {
+		return nil, errors.New("Failed to get thing")
+	}
+  toRes = Account{}
+	json.Unmarshal(toAccountAsBytes, &toRes)
+
+  transferAmount, err := strconv.Atoi(args[1])
+   if err != nil {
+      // handle error
+   }
+
+  toRes.GiveBalance = toRes.GiveBalance + transferAmount
+
+	toJsonAsBytes, _ := json.Marshal(toRes)
+	err = stub.PutState(username, toJsonAsBytes)								//rewrite the marble with id as key
 	if err != nil {
 		return nil, err
 	}
+
 	return nil, nil
 }
 
