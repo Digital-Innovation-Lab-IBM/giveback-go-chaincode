@@ -255,7 +255,7 @@ func (t *SimpleChaincode) set_user(stub shim.ChaincodeStubInterface, args []stri
   var toRes Account
 	//     0         1        2        3
 	// "fromUser", "500", "toUser", "reason"
-	if len(args) < 3 {
+	if len(args) < 4 {
 		return nil, errors.New("Incorrect number of arguments. Expecting 4")
 	}
 
