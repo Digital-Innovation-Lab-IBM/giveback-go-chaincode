@@ -80,10 +80,10 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
     return t.CreateAccount(stub, args)
   } else if function == "createProduct" {
     return t.CreateProduct(stub, args)
-  } else if function == "purchaseProduct" {
-    return t.PurchaseProduct(stub, args)
-  } else if function == "addAllowance" {
+  } /*else if function == "addAllowance" {
     return t.AddAllowance(stub, args)
+  }*/ else if function == "purchaseProduct" {
+    return t.PurchaseProduct(stub, args)
   } else if function == "set_user" {										//change owner of a marble
 		res, err := t.set_user(stub, args)											//lets make sure all open trades are still valid
 		return res, err
