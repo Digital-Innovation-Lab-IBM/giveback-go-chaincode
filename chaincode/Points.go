@@ -136,7 +136,14 @@ func (t *SimpleChaincode) Write(stub shim.ChaincodeStubInterface, args []string)
 	if len(args) != 2 {
 		return nil, errors.New("Incorrect number of arguments. Expecting 2. name of the variable and value to set")
 	}
+  username := args[0]
+
+  toAccountAsBytes, err := stub.GetState(username)
+	if err != nil {
+		return nil, errors.New("Failed to get thing")
+	}
   toRes = Account{}
+	json.Unmarshal(toAccountAsBytes, &toRes)
 
 	name = args[0]															//rename for funsies
 	value = args[1]
