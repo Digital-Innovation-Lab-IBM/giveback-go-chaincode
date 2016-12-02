@@ -130,6 +130,7 @@ func (t *SimpleChaincode) read(stub shim.ChaincodeStubInterface, args []string) 
 func (t *SimpleChaincode) Write(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 	var name, value string // Entities
 	var err error
+  var toRes Account
 	fmt.Println("running write()")
 
 	if len(args) != 2 {
