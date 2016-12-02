@@ -136,6 +136,7 @@ func (t *SimpleChaincode) Write(stub shim.ChaincodeStubInterface, args []string)
 	if len(args) != 2 {
 		return nil, errors.New("Incorrect number of arguments. Expecting 2. name of the variable and value to set")
 	}
+  toRes = Account{}
 
 	name = args[0]															//rename for funsies
 	value = args[1]
