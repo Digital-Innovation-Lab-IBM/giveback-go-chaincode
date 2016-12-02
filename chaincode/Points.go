@@ -74,7 +74,7 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 
   if function == "init" {													//initialize the chaincode state, used as reset
 		return t.Init(stub, "init", args)
-	}  else if function == "userAllowance" {											//writes a value to the chaincode state
+	}  else if function == "write" {											//writes a value to the chaincode state
 		return t.Write(stub, args)
 	} else if function == "createAccount" {
     return t.CreateAccount(stub, args)
