@@ -13,17 +13,17 @@ type SimpleChaincode struct {
 }
 
 type Account struct {
-	ID                 string          `json:"ID"`
-	Password           string          `json:"Password"`
-	GiveBalance        int             `json:"GiveBalance"`
-	PointsBalance      int             `json:"PointsBalance"`
+	ID                 string          `json:"id"`
+	Password           string          `json:"password"`
+	GiveBalance        int             `json:"giveBalance"`
+	PointsBalance      int             `json:"pointsBalance"`
 }
 
 type Product struct{
-  ID                 string          `json:"ID"`
-  Name               string          `json:"Name"`
-  Cost               int             `json:"Cost"`
-  Owner              *string         `json:"Owner"`
+  ID                 string          `json:"id"`
+  Name               string          `json:"name"`
+  Cost               int             `json:"cost"`
+  Owner              *string         `json:"owner"`
 }
 
 // ============================================================================================================================
