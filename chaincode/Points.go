@@ -184,7 +184,7 @@ func (t *SimpleChaincode) CreateProduct(stub shim.ChaincodeStubInterface, args [
       return nil, err
    }
 
-  prod := Product{ID: ID, Name: name, Cost: cost, Owners:[]string}
+  prod := Product{ID: ID, Name: name, Cost: cost, Owners: nil}
   prodBytes, err := json.Marshal(&prod)
 
   err = stub.PutState(ID, prodBytes)
