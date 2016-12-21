@@ -23,7 +23,7 @@ type Product struct{
   ID                 string          `json:"id"`
   Name               string          `json:"name"`
   Cost               int             `json:"cost"`
-  Owner              *string         `json:"owner"`
+  Owners             []string        `json:"owners"`
 }
 
 // ============================================================================================================================
@@ -184,7 +184,7 @@ func (t *SimpleChaincode) CreateProduct(stub shim.ChaincodeStubInterface, args [
       return nil, err
    }
 
-  prod := Product{ID: ID, Name: name, Cost: cost, Owner:nil}
+  prod := Product{ID: ID, Name: name, Cost: cost, Owners:nil}
   prodBytes, err := json.Marshal(&prod)
 
   err = stub.PutState(ID, prodBytes)
@@ -221,16 +221,12 @@ func (t *SimpleChaincode) PurchaseProduct(stub shim.ChaincodeStubInterface, args
   prodRes := Product{}
 	json.Unmarshal(prodAsBytes, &prodRes)
 
-  if(prodRes.Owner != nil){
-    return nil, errors.New("Already owned")
-  }
-
   if(fromRes.PointsBalance < prodRes.Cost){
     fmt.Println("- Insufficient funds")
     return nil, errors.New("Insufficient funds")
   }
 
-  prodRes.Owner = &fromRes.ID
+  prodRes.Owners = append(prodRes.Owners, fromRes.ID)
   fromRes.PointsBalance -= prodRes.Cost
 
   fromJsonAsBytes, _ := json.Marshal(fromRes)
