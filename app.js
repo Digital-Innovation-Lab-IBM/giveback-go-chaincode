@@ -42,10 +42,10 @@ var options = 	{
 			quiet: true 															//detailed debug messages on/off true/false
 		}
 	},
-	chaincode:{
-		zip_url: 'https://github.com/david-hong/blockchain-test/raw/master/chaincode.zip',
+  chaincode:{
+		zip_url: 'https://github.com/ykcai/blockchain-code/raw/master/chaincode.zip',
 		unzip_dir: 'chaincode',													//subdirectroy name of chaincode after unzipped
-		git_url: 'http://gopkg.in/david-hong/blockchain-test.v1/chaincode',		//GO get http url
+		git_url: 'http://gopkg.in/ykcai/blockchain-code.v1/chaincode',		//GO get http url
 	}
 };
 
