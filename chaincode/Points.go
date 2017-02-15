@@ -14,7 +14,6 @@ type SimpleChaincode struct {
 
 type Account struct {
 	ID                 string          `json:"id"`
-	Password           string          `json:"password"`
 	GiveBalance        int             `json:"giveBalance"`
 	PointsBalance      int             `json:"pointsBalance"`
 }
@@ -154,14 +153,13 @@ func (t *SimpleChaincode) CreateAccount(stub shim.ChaincodeStubInterface, args [
   var err error
  	fmt.Println("running CreateAccount()")
 
-  if len(args) != 2 {
+  if len(args) != 1 {
      fmt.Println("Error obtaining username")
      return nil, errors.New("createAccount accepts a single username argument")
   }
   username = args[0]
-  password := args[1]
 
-  var account = Account{ID: username, Password: password, GiveBalance: 500, PointsBalance: 50}
+  var account = Account{ID: username, GiveBalance: 500, PointsBalance: 50}
   accountBytes, err := json.Marshal(&account)
 
   err = stub.PutState(username, accountBytes)
