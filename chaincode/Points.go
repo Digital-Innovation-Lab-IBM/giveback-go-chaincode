@@ -67,6 +67,7 @@ func main() {
 
 // ============================================================================================================================
 // Invoke - Our entry point to invoke a chaincode function (eg. write, createAccount, etc)
+
 // ============================================================================================================================
 func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
 	fmt.Println("invoke is running " + function)
@@ -85,6 +86,8 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
     return t.AddAllowance(stub, args)
   } else if function == "exchange" {
     return t.Exchange(stub, args)
+  } else if function == "deposit" {
+    return t.Deposit(stub, args)
   } else if function == "set_user" {										//change owner of a marble
 		res, err := t.set_user(stub, args)											//lets make sure all open trades are still valid
 		return res, err
@@ -280,6 +283,9 @@ func (t *SimpleChaincode) AddAllowance(stub shim.ChaincodeStubInterface, args []
 	return nil, nil
 }
 
+
+
+
 //Redeem points (Exchane)
 func (t *SimpleChaincode) Exchange(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 	var err error
@@ -319,6 +325,60 @@ func (t *SimpleChaincode) Exchange(stub shim.ChaincodeStubInterface, args []stri
 
 	return nil, nil
 }
+
+
+
+
+
+
+
+//Deposit points into a users account for free
+func (t *SimpleChaincode) Deposit(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+    var err error
+    var toRes Account
+
+	//     0         1
+	// "User",     "500"
+
+	if len(args) < 2 {
+		return nil, errors.New("Incorrect number of arguments. Expecting 2")
+	}
+
+  username := args[0]
+  toAccountAsBytes, err := stub.GetState(username)
+	if err != nil {
+		return nil, errors.New("Failed to get thing")
+	}
+
+  toRes = Account{}
+	json.Unmarshal(toAccountAsBytes, &toRes)
+
+  transferAmount, err := strconv.Atoi(args[1])
+   if err != nil {
+      // handle error
+   }
+
+  //
+  // if transferAmount > toRes.PointsBalance {
+  //   return nil, errors.New("Insufficient funds")
+  // }
+
+  toRes.GiveBalance = toRes.GiveBalance + transferAmount
+  // toRes.PointsBalance = toRes.PointsBalance - transferAmount
+
+	toJsonAsBytes, _ := json.Marshal(toRes)
+	err = stub.PutState(username, toJsonAsBytes)								//rewrite the marble with id as key
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, nil
+}
+
+
+
+
+
 
 // ============================================================================================================================
 // Set Trade - create an open trade for a marble you want with marbles you have
