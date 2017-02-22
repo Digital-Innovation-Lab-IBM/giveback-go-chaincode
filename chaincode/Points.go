@@ -320,10 +320,6 @@ func (t *SimpleChaincode) Exchange(stub shim.ChaincodeStubInterface, args []stri
 	return nil, nil
 }
 
-
-
-
-
 //Redeem points (Exchane)
 func (t *SimpleChaincode) Deposit(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 	var err error
@@ -348,12 +344,7 @@ func (t *SimpleChaincode) Deposit(stub shim.ChaincodeStubInterface, args []strin
       // handle error
    }
 
-  // if transferAmount > toRes.PointsBalance {
-  //   return nil, errors.New("Insufficient funds")
-  // }
-
   toRes.GiveBalance = toRes.GiveBalance + transferAmount
-  // toRes.PointsBalance = toRes.PointsBalance - transferAmount
 
 	toJsonAsBytes, _ := json.Marshal(toRes)
 	err = stub.PutState(username, toJsonAsBytes)								//rewrite the marble with id as key
@@ -364,21 +355,16 @@ func (t *SimpleChaincode) Deposit(stub shim.ChaincodeStubInterface, args []strin
 	return nil, nil
 }
 
-
-
-
-
-
 // ============================================================================================================================
 // Set Trade - create an open trade for a marble you want with marbles you have
 // ============================================================================================================================
 func (t *SimpleChaincode) set_user(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 	var err error
   var toRes Account
-	//     0         1        2        3
-	// "fromUser", "500", "toUser", "reason"
-	if len(args) < 4 {
-		return nil, errors.New("Incorrect number of arguments. Expecting 4")
+	//     0         1        2        3         4
+	// "fromUser", "500", "toUser", "reason", "hours"
+	if len(args) < 5 {
+		return nil, errors.New("Incorrect number of arguments. Expecting 5")
 	}
 
 	fromAccountAsBytes, err := stub.GetState(args[0])
@@ -390,9 +376,9 @@ func (t *SimpleChaincode) set_user(stub shim.ChaincodeStubInterface, args []stri
 		return nil, errors.New("Failed to get Receiver")
 	}
 
-  // if ( fromAccountAsBytes == toAccountAsBytes) {
-  //   return nil, errors.New("Failed to make Transaction - Sender must be different than Receiver")
-  // }
+  if ( fromAccountAsBytes == toAccountAsBytes) {
+    return nil, errors.New("Failed to make Transaction - Sender must be different than Receiver")
+  }
 
 	fromRes := Account{}
 	json.Unmarshal(fromAccountAsBytes, &fromRes)										//un stringify it aka JSON.parse()
@@ -400,10 +386,7 @@ func (t *SimpleChaincode) set_user(stub shim.ChaincodeStubInterface, args []stri
   toRes = Account{}
 	json.Unmarshal(toAccountAsBytes, &toRes)
 
-
-
 	accountBalance := fromRes.GiveBalance
-
 
   transferAmount, err := strconv.Atoi(args[1])
    if err != nil {
@@ -412,6 +395,7 @@ func (t *SimpleChaincode) set_user(stub shim.ChaincodeStubInterface, args []stri
       // handle error
       return nil, err
    }
+
   if(accountBalance < transferAmount) {
     fmt.Println("- Insufficient funds")
     return nil, errors.New("Failed to make Transaction - Insufficient funds")
