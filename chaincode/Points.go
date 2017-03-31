@@ -361,10 +361,10 @@ func (t *SimpleChaincode) Deposit(stub shim.ChaincodeStubInterface, args []strin
 func (t *SimpleChaincode) set_user(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 	var err error
   var toRes Account
-	//     0         1        2        3         4
-	// "fromUser", "500", "toUser", "reason", "hours"
+	//     0         1        2        3         4         5
+	// "fromUser", "500", "toUser", "reason", "hours", "comments"
 	if len(args) < 5 {
-		return nil, errors.New("Incorrect number of arguments. Expecting 5")
+		return nil, errors.New("Incorrect number of arguments. Expecting 6")
 	}
 
 	fromAccountAsBytes, err := stub.GetState(args[0])
@@ -389,7 +389,7 @@ func (t *SimpleChaincode) set_user(stub shim.ChaincodeStubInterface, args []stri
       //Error because the amount entered is not a strNumber.
       // DO not need this case if we can get a number pad so user cannot enter other characters
       // handle error
-      return nil, errors.New("WFJWOEIFJWEIOFJWOEIFJWOEIFJWEIF CANNOT DO THIS WAHH")
+      return nil, err
    }
 
   if(accountBalance < transferAmount) {
