@@ -161,7 +161,7 @@ func (t *SimpleChaincode) CreateAccount(stub shim.ChaincodeStubInterface, args [
   }
   username = args[0]
 
-  var account = Account{ID: username, GiveBalance: 500, PointsBalance: 50}
+  var account = Account{ID: username, GiveBalance: 500, PointsBalance: 0}
   accountBytes, err := json.Marshal(&account)
 
   err = stub.PutState(username, accountBytes)
