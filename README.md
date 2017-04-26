@@ -1,2 +1,2 @@
 # blockchain-code
-V1 - updated as of Jan 2017
+V2 - updated as of April 2017
