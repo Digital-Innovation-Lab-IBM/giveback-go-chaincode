@@ -13,13 +13,12 @@ import (
 type SimpleChaincode struct {
 }
 
-// var taskIndexStr = "_taskindex"            //name for the key/value that will store a list of all known tasks
 var MarketplaceStr = "_marketplace"       // name for the key/value that will store all open tasks
-var CompletedTasksStr = "_completedTasks" // name for the key/value that will store all completed tasks
+var CompletedTasksStr = "_completedTasks" // name for the key/value that will store all completed tasks (all tasks = marketplace + completedtasks)
 
 type Task struct {
 	Uid         string   `json:"id"`
-	User        string   `json:"email"` // users are defined by their emails
+	User        string   `json:"user"` // users are defined by their emails
 	Amount      int      `json:"amount"`
 	Title       string   `json:"title"`
 	Description string   `json:"description"`
@@ -74,7 +73,7 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface, function string
 	}
 
 	var cTasks CompletedTasks
-	jsonAsBytes, _ := json.Marshal(cTasks) //clearr the CompletedTasks struct
+	jsonAsBytes, _ := json.Marshal(cTasks) //clear the CompletedTasks struct
 	err = stub.PutState(CompletedTasksStr, jsonAsBytes)
 	if err != nil {
 		return nil, err
@@ -107,8 +106,8 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 		return t.add_submission(stub, args)
 	} else if function == "delete_submission" {
 		return t.delete_submission(stub, args)
-	} else if function == "finished_task" {
-		return t.finished_task(stub, args)
+	} else if function == "end_task" {
+		return t.end_task(stub, args)
 	}
 
 	fmt.Println("invoke did not find func: " + function)
@@ -224,13 +223,13 @@ func (t *SimpleChaincode) add_task(stub shim.ChaincodeStubInterface, args []stri
 	fmt.Println("below is task: ")
 	fmt.Println(task)
 
-	////// store task with Uid as key for easy search /////
-	taskAsBytes, _ := json.Marshal(task)
-	err = stub.PutState(args[0], taskAsBytes)
-	if err != nil {
-		return nil, err
-	}
-	//////////////////////////////////////////////////////
+	////////////////////// 1) store task with Uid as key for easy search /////
+	taskAsBytes, _ := json.Marshal(task)      /////
+	err = stub.PutState(args[0], taskAsBytes) /////
+	if err != nil {                           /////
+		return nil, err /////
+	} /////
+	//////////////////////////////////////////////////////////////////////////
 
 	//get the marketplace struct
 	MarketplaceAsBytes, err := stub.GetState(MarketplaceStr)
@@ -240,19 +239,18 @@ func (t *SimpleChaincode) add_task(stub shim.ChaincodeStubInterface, args []stri
 	var mplace Marketplace
 	json.Unmarshal(MarketplaceAsBytes, &mplace) //un stringify it aka JSON.parse()
 
-	//// append task into marketplace ///////////////////////////
-	mplace.Tasks = append(mplace.Tasks, task)
-	fmt.Println("! appended task to marketplace")
-	jsonAsBytes, _ := json.Marshal(mplace)
-	err = stub.PutState(MarketplaceStr, jsonAsBytes) //rewrite marketplace
-	if err != nil {
-		return nil, err
-	}
-	//////////////////////////////////////////////////////////////
+	/////////////////////// 2) append task into marketplace ///////////////////////////
+	mplace.Tasks = append(mplace.Tasks, task)        /////
+	fmt.Println("! appended task to marketplace")    /////
+	jsonAsBytes, _ := json.Marshal(mplace)           /////
+	err = stub.PutState(MarketplaceStr, jsonAsBytes) //rewrite marketplace		  /////
+	if err != nil {                                  /////
+		return nil, err /////
+	} /////
+	///////////////////////////////////////////////////////////////////////////////////
 
 	fmt.Println("- end add task")
 	return nil, nil
-
 }
 
 // ============================================================================================================================
@@ -262,13 +260,13 @@ func (t *SimpleChaincode) modify_task(stub shim.ChaincodeStubInterface, args []s
 	var err error
 
 	//   0          1           2
-	// "command", "uid",  "bob@email.com"
-	if len(args) < 3 {
-		return nil, errors.New("Incorrect number of arguments. Expecting 3")
+	// "command", "uid",  "bob@email.com" (email is optional)
+	if len(args) < 2 {
+		return nil, errors.New("Incorrect number of arguments. Expecting 2 or 3")
 	}
 
 	fmt.Println("- start helper modify_task")
-	fmt.Println(args[0] + " - " + args[1] + " - " + args[2])
+	// fmt.Println(args[0] + " - " + args[1] + " - " + args[2])
 
 	// get task from blockchain
 	tasksAsBytes, err := stub.GetState(args[1])
@@ -296,8 +294,13 @@ func (t *SimpleChaincode) modify_task(stub shim.ChaincodeStubInterface, args []s
 		fmt.Println(res.Submissions)
 		fmt.Println(res)
 	} else if args[0] == "add_completedBy" {
-		res.CompletedBy = args[2]
-		fmt.Println("! marked task as complete")
+		if len(args) == 3 {
+			res.CompletedBy = args[2]
+			fmt.Println("! marked task as complete by user")
+		} else {
+			res.CompletedBy = "CLOSED"
+			fmt.Println("! marked task as CLOSED")
+		}
 		fmt.Println(res.CompletedBy)
 		fmt.Println(res)
 	} else {
@@ -365,11 +368,12 @@ func (t *SimpleChaincode) add_submission(stub shim.ChaincodeStubInterface, args 
 				return nil, err
 			}
 			break
+		} else if i == (len(mplace.Tasks) - 1) {
+			return nil, errors.New("!Task not found in add_submission")
 		}
 	}
 	fmt.Println("- end add submission")
 	return nil, nil
-
 }
 
 // ============================================================================================================================
@@ -408,13 +412,19 @@ func (t *SimpleChaincode) delete_submission(stub shim.ChaincodeStubInterface, ar
 		if mplace.Tasks[i].Uid == args[0] { // found the trade to update
 			fmt.Println("Found trade to delete submission")
 
-			t.modify_task(stub, []string{"delete_submission", args[0], args[1]}) // delete submission from single uid query
+			if len(mplace.Tasks[i].Submissions) == 0 { // if task has no submissions
+				return nil, errors.New("!Did not find corresponding submission in task to delete")
+			}
 
 			for j, v := range mplace.Tasks[i].Submissions { // delete submission from marketplace array
+				fmt.Println(mplace.Tasks[i].Submissions)
 				if v == args[1] {
 					fmt.Println("found v")
+					t.modify_task(stub, []string{"delete_submission", args[0], args[1]}) // delete submission from single uid query
 					mplace.Tasks[i].Submissions = append(mplace.Tasks[i].Submissions[:j], mplace.Tasks[i].Submissions[j+1:]...)
 					break
+				} else if j == (len(mplace.Tasks[i].Submissions) - 1) { // did not find submission to delete
+					return nil, errors.New("!Did not find corresponding submission in task to delete")
 				}
 			}
 
@@ -428,26 +438,27 @@ func (t *SimpleChaincode) delete_submission(stub shim.ChaincodeStubInterface, ar
 				return nil, err
 			}
 			break
+		} else if i == (len(mplace.Tasks) - 1) {
+			return nil, errors.New("!Task not found in delete_submission")
 		}
 	}
 	fmt.Println("- end delete submission")
 	return nil, nil
-
 }
 
 // ============================================================================================================================
-// finished_task - set task as finished by user and move task to CompletedTrade
+// end_task - (if user_who_finished is given, set task as finished by user and) move task to CompletedTrade
 // ============================================================================================================================
-func (t *SimpleChaincode) finished_task(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+func (t *SimpleChaincode) end_task(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 	var err error
 
 	//   0            1
-	// "uid", "user_who_finished"
-	if len(args) < 2 {
-		return nil, errors.New("Incorrect number of arguments. Expecting 2")
+	// "uid", "user_who_finished" (user_who_finished is optional)
+	if len(args) > 2 {
+		return nil, errors.New("Incorrect number of arguments. Expecting 1 or 2")
 	}
 
-	fmt.Println("- start finished tasks")
+	fmt.Println("- start end task")
 
 	// get all active tasks in marketplace
 	MarketplaceAsBytes, err := stub.GetState(MarketplaceStr)
@@ -460,9 +471,8 @@ func (t *SimpleChaincode) finished_task(stub shim.ChaincodeStubInterface, args [
 	fmt.Print("Marketplace array: ")
 	fmt.Println(mplace)
 
-	t.modify_task(stub, []string{"add_completedBy", args[0], args[1]})
-
 	var completedTask = Task{}
+
 	//////// update completedBy in task in marketplace //////
 	for i := range mplace.Tasks { //iter through all the tasks
 		fmt.Print("looking @ task name: ")
@@ -471,7 +481,14 @@ func (t *SimpleChaincode) finished_task(stub shim.ChaincodeStubInterface, args [
 		if mplace.Tasks[i].Uid == args[0] { // found the trade to update
 			fmt.Println("Found trade to delete in marketplace array")
 
-			mplace.Tasks[i].CompletedBy = args[1] // add user to completedBy
+			if len(args) == 2 { // if task is finished by a user
+				t.modify_task(stub, []string{"add_completedBy", args[0], args[1]})
+				mplace.Tasks[i].CompletedBy = args[1] // add user to completedBy
+			} else {
+				t.modify_task(stub, []string{"add_completedBy", args[0]})
+				mplace.Tasks[i].CompletedBy = "CLOSED"
+			}
+
 			completedTask = mplace.Tasks[i]
 			fmt.Println(completedTask)
 			mplace.Tasks = append(mplace.Tasks[:i], mplace.Tasks[i+1:]...) // remove task from marketplace
@@ -483,6 +500,8 @@ func (t *SimpleChaincode) finished_task(stub shim.ChaincodeStubInterface, args [
 				return nil, err
 			}
 			break
+		} else if i == (len(mplace.Tasks) - 1) {
+			return nil, errors.New("!Task not found in end_task")
 		}
 	}
 
@@ -508,7 +527,7 @@ func (t *SimpleChaincode) finished_task(stub shim.ChaincodeStubInterface, args [
 	fmt.Print("new completedTasks: ")
 	fmt.Println(cTasks)
 
-	fmt.Println("- end finished tasks")
+	fmt.Println("- end end task")
 
 	return nil, nil
 }
