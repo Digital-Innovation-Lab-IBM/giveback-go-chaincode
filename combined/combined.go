@@ -13,18 +13,22 @@ import (
 type SimpleChaincode struct {
 }
 
+// using pointers is pointles.. cc won't give you back original element.
+// have to physically add new element/struct instead of using pointers. Thanks fabric. >:(
 var MarketplaceStr = "_marketplace"       // name for the key/value that will store all open tasks
 var CompletedTasksStr = "_completedTasks" // name for the key/value that will store all completed tasks (all tasks = marketplace + completedtasks)
 
 type Task struct {
 	Uid         string   `json:"id"`
 	User        string   `json:"user"` // users are defined by their emails
+	FullName    string   `json:"fullName`
 	Amount      int      `json:"amount"`
 	Title       string   `json:"title"`
 	Description string   `json:"description"`
 	StartDate   string   `json:"startDate"`
 	EndDate     string   `json:"endDate"`
-	Skills      string   `json:"skills"`
+	Hours       int      `json:"hours"`
+	Skills      []string `json:"skills"`
 	Location    string   `json:"location"` // either "remote" or "onsite"
 	Address     string   `json:"address"`
 	Submissions []string `json:"submissions"`
@@ -207,10 +211,10 @@ func (t *SimpleChaincode) write(stub shim.ChaincodeStubInterface, args []string)
 func (t *SimpleChaincode) add_task(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 	var err error
 
-	//   0       1       2         3           4              5           6          7          8          9
-	// "uid", "user", "amount", "title", "description", "start date", "end date", "skills", "location", "address" (address is optional)
-	if len(args) < 9 {
-		return nil, errors.New("Incorrect number of arguments. Expecting 9 or 10")
+	//   0       1        2          3         4           5            6             7          8         9          10        11
+	// "uid", "user", "fullName", "amount", "title", "description", "start date", "end date", "hours", "skills", "location", "address" (address is optional)
+	if len(args) < 11 {
+		return nil, errors.New("Incorrect number of arguments. Expecting 11 or 12")
 	}
 
 	fmt.Println("- create and add task")
@@ -226,26 +230,35 @@ func (t *SimpleChaincode) add_task(stub shim.ChaincodeStubInterface, args []stri
 	fmt.Println(args[6])
 	fmt.Println(args[7])
 	fmt.Println(args[8])
+	fmt.Println(args[9])
+	fmt.Println(args[10])
 
-	amount, err := strconv.Atoi(args[2])
+	amount, err := strconv.Atoi(args[3])
 	if err != nil {
-		return nil, errors.New("3rd argument (amount) must be a numeric string")
+		return nil, errors.New("4th argument (amount) must be a numeric string")
+	}
+
+	hours, err := strconv.Atoi(args[8])
+	if err != nil {
+		return nil, errors.New("8th argument (hours) must be a numeric string")
 	}
 
 	var task = Task{}
 	task.Uid = args[0]
 	task.User = args[1]
+	task.FullName = args[2]
 	task.Amount = amount
-	task.Title = args[3]
-	task.Description = args[4]
-	task.StartDate = args[5]
-	task.EndDate = args[6]
-	task.Skills = args[7]
-	task.Location = args[8]
-	if len(args) > 9 {
-		fmt.Println(args[9])
-		fmt.Println("address not empty, add to task")
-		task.Address = args[9]
+	task.Title = args[4]
+	task.Description = args[5]
+	task.StartDate = args[6]
+	task.EndDate = args[7]
+	task.Hours = hours
+	task.Skills = append(task.Skills, args[9])
+	task.Location = args[10]
+	if len(args) > 11 {
+		fmt.Println(args[11])
+		fmt.Println("Has address, add to task")
+		task.Address = args[11]
 	}
 
 	fmt.Println("below is task: ")
