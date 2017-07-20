@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 )
@@ -253,7 +254,13 @@ func (t *SimpleChaincode) add_task(stub shim.ChaincodeStubInterface, args []stri
 	task.StartDate = args[6]
 	task.EndDate = args[7]
 	task.Hours = hours
-	task.Skills = append(task.Skills, args[9])
+	task.Skills = strings.Split(args[9], ",")
+	fmt.Println(task.Skills)
+	for i := range task.Skills {
+		fmt.Println(task.Skills[i])
+		task.Skills[i] = strings.Trim(task.Skills[i], " ")
+		fmt.Println(task.Skills)
+	}
 	task.Location = args[10]
 	if len(args) > 11 {
 		fmt.Println(args[11])
@@ -265,11 +272,11 @@ func (t *SimpleChaincode) add_task(stub shim.ChaincodeStubInterface, args []stri
 	fmt.Println(task)
 
 	////////////////////// 1) store task with Uid as key for easy search /////
-	taskAsBytes, _ := json.Marshal(task)      /////
-	err = stub.PutState(args[0], taskAsBytes) /////
-	if err != nil {                           /////
-		return nil, err /////
-	} /////
+	taskAsBytes, _ := json.Marshal(task)      //				         /////
+	err = stub.PutState(args[0], taskAsBytes) // 						 /////
+	if err != nil {                           //                         /////
+		return nil, err //												 /////
+	} //																 /////
 	//////////////////////////////////////////////////////////////////////////
 
 	//get the marketplace struct
@@ -281,13 +288,13 @@ func (t *SimpleChaincode) add_task(stub shim.ChaincodeStubInterface, args []stri
 	json.Unmarshal(MarketplaceAsBytes, &mplace) //un stringify it aka JSON.parse()
 
 	/////////////////////// 2) append task into marketplace ///////////////////////////
-	mplace.Tasks = append(mplace.Tasks, task)        /////
-	fmt.Println("! appended task to marketplace")    /////
-	jsonAsBytes, _ := json.Marshal(mplace)           /////
+	mplace.Tasks = append(mplace.Tasks, task)        //					          /////
+	fmt.Println("! appended task to marketplace")    //							  /////
+	jsonAsBytes, _ := json.Marshal(mplace)           //					          /////
 	err = stub.PutState(MarketplaceStr, jsonAsBytes) //rewrite marketplace		  /////
-	if err != nil {                                  /////
-		return nil, err /////
-	} /////
+	if err != nil {                                  //                           /////
+		return nil, err //														  /////
+	} //																		  /////
 	///////////////////////////////////////////////////////////////////////////////////
 
 	fmt.Println("- end add task")
@@ -578,7 +585,7 @@ func (t *SimpleChaincode) end_task(stub shim.ChaincodeStubInterface, args []stri
 	return nil, nil
 }
 
-// ================================ BELOW IS OLD TRANSACTION CC FNS ===================================//
+// ================================ BELOW ARE OLD TRANSACTION CC FNS ===================================//
 
 func (t *SimpleChaincode) CreateAccount(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 	// Obtain the username to associate with the account
