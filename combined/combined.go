@@ -136,6 +136,8 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 		return t.AddAllowance(stub, args)
 	} else if function == "exchange" {
 		return t.Exchange(stub, args)
+	} else if function == "redeem_bluepoints" {
+		return t.redeem_bluepoints(stub, args)
 	} else if function == "deposit" {
 		return t.Deposit(stub, args)
 	} else if function == "set_user" { //change owner of a marble
@@ -739,7 +741,7 @@ func (t *SimpleChaincode) Exchange(stub shim.ChaincodeStubInterface, args []stri
 
 	transferAmount, err := strconv.Atoi(args[1])
 	if err != nil {
-		// handle error
+		return nil, errors.New("2nd argument (amount) must be a numeric string")
 	}
 
 	if transferAmount > toRes.PointsBalance {
@@ -755,6 +757,75 @@ func (t *SimpleChaincode) Exchange(stub shim.ChaincodeStubInterface, args []stri
 		return nil, err
 	}
 
+	return nil, nil
+}
+
+// ============================================================================================================================
+// redeem_bluepoints - redeem your savings into bluecoins (give to BLUEPOINTSBANK@IBM.COM)
+// ============================================================================================================================
+func (t *SimpleChaincode) redeem_bluepoints(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+	var err error
+	// var toRes Account
+	//     0               1                    2
+	// "fromUser", "amountToExchange",  "amountOfBluecoins"
+	fmt.Println("- start redeem bluepoints")
+	fmt.Println(args[0])
+	fmt.Println(args[1])
+	fmt.Println(args[2])
+
+	if len(args) < 3 {
+		return nil, errors.New("Incorrect number of arguments. Expecting 3")
+	}
+
+	fromAccountAsBytes, err := stub.GetState(args[0])
+	if err != nil {
+		return nil, errors.New("Failed to get Sender")
+	}
+	toAccountAsBytes, err := stub.GetState("BLUEPOINTSBANK@IBM.COM")
+	if err != nil {
+		return nil, errors.New("Failed to get Receiver")
+	}
+
+	fromRes := Account{}
+	json.Unmarshal(fromAccountAsBytes, &fromRes) //un stringify it aka JSON.parse()
+
+	toRes := Account{}
+	json.Unmarshal(toAccountAsBytes, &toRes)
+
+	/////
+	exchangeAmount, err := strconv.Atoi(args[1])
+	if err != nil {
+		return nil, errors.New("2nd argument (amountToExchange) must be a numeric string")
+	}
+
+	bluepointsAmount, err := strconv.Atoi(args[2])
+	if err != nil {
+		return nil, errors.New("3rd argument (amountOfBluepoints) must be a numeric string")
+	}
+
+	SavingsBalance := fromRes.PointsBalance
+
+	if SavingsBalance < exchangeAmount {
+		fmt.Println("- Insufficient funds to exchange to bluepoints")
+		return nil, errors.New("Failed to make Transaction - Insufficient funds to exchange to bluepoints")
+	}
+
+	fromRes.PointsBalance = fromRes.PointsBalance - exchangeAmount
+	toRes.PointsBalance = toRes.PointsBalance + bluepointsAmount
+
+	toJsonAsBytes, _ := json.Marshal(toRes)
+	err = stub.PutState("BLUEPOINTSBANK@IBM.COM", toJsonAsBytes) //rewrite the marble with id as key
+	if err != nil {
+		return nil, err
+	}
+
+	fromJsonAsBytes, _ := json.Marshal(fromRes)
+	err = stub.PutState(args[0], fromJsonAsBytes) //rewrite the marble with id as key
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println("- end redeem bluepoints, successful transaction")
 	return nil, nil
 }
 
